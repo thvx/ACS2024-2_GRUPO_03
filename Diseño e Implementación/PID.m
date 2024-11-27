@@ -6,9 +6,9 @@ g = 9.8;          % Gravedad
 u = 0;            % Fuerza
 
 % FUNCION DE TRANSFERENCIA
-numtf = [m*l];                           % Numerador
-dentf = [(M + m)*l^2, 0, -m*g*l];        % Denominador
-G=tf(numtf, dentf);                      % Funcion de transferencia
+numtf = [-1];                   % Numerador
+dentf = [M*l, 0, -(M+m)*g];     % Denominador
+G = tf(numtf, dentf);           % Función de transferencia
 
 % CONTROLADOR PID SIN SINTONIZAR
 K_p = 100;     %Constante proporcional
@@ -38,9 +38,9 @@ title({'Resultado respecto al Ángulo \theta'});
 pidTuner (G, C_no_sintonizado);           %PIDTUNER SINTONIZA AUTOMATICAMENTE LAS CONSTANTES(K_d, K_i, K_d) DEL PID 
 
 % CONTROLADOR PID SINTONIZADO
-K_p = 256.7083;
-K_i = 495.8264;
-K_d = 33.2269;
+K_p = 0;
+K_i = 9.8;
+K_d = 0;
 C_sintonizado = pid (K_p, K_i, K_d);
 
 % IMPRESION DE GRAFICAS
@@ -65,5 +65,3 @@ figure(5);
 impulse(T_no_sintonizado, 'b', T_sintonizado, 'r');
 legend('PID no sintonizado', 'PID sintonizado');
 title('Comparación de respuestas al impulso');
-
-

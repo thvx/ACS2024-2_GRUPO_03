@@ -1,85 +1,128 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import control as ctrl
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import tkinter as tk
+from tkinter import ttk
 
-# PARAMETROS DEL SISTEMA
-M = 0            # El carrito no tiene masa
-m = 1            # Masa del péndulo
-l = 1            # Longitud del péndulo
-g = 9.8          # Gravedad
-u = 0            # Fuerza
+class PendulumSystem:
+    def __init__(self, M, m, l, g=9.8):
+        self.M = M
+        self.m = m
+        self.l = l
+        self.g = g
+        numtf = [1]
+        dentf = [self.l * (self.M + self.m), 0, -self.g * (self.M + self.m)]
+        self.G = ctrl.TransferFunction(numtf, dentf)
 
-# FUNCION DE TRANSFERENCIA
-numtf = [-1]                   # Numerador
-dentf = [M*l, 0, -(M+m)*g]     # Denominador
-G = ctrl.TransferFunction(numtf, dentf)  # Función de transferencia
+    def simulate(self, K_p, K_i, K_d, theta_0=0, u_func=None, t_end=5, steps=500):
+        C = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0])
+        T = ctrl.feedback(self.G * C)
+        t = np.linspace(0, t_end, steps)
 
-# CONTROLADOR PID SIN SINTONIZAR
-K_p = 100     # Constante proporcional
-K_i = 75      # Constante integral
-K_d = 10      # Constante derivativa
-C_no_sintonizado = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0])  # Transfer Function PID
+        # Simulación con entrada personalizada
+        if u_func is None:
+            # Si no hay una función para \( u(t) \), usar un impulso
+            time, response = ctrl.impulse_response(T, T=t)
+        else:
+            # Usar la función \( u(t) \) para generar la entrada
+            u_values = np.array([u_func(ti) for ti in t])  # Evaluar \( u(t) \) en cada paso de tiempo
+            time, response, _ = ctrl.forced_response(T, T=t, U=u_values)
 
-# SISTEMA DE FEEDBACK
-T_no_sintonizado = ctrl.feedback(G * C_no_sintonizado)
+        # Asegurarse de que el ángulo inicial se maneje correctamente
+        response = response + theta_0  # Ajuste correcto del ángulo inicial
+        
+        return time, response
 
-# GRAFICA DE LAS RAICES DEL PID
-plt.figure(1)
-ctrl.root_locus(T_no_sintonizado)
-plt.title('Raices del PID sin sintonizar')
+class PendulumApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Controlador de Péndulo Invertido")
 
-# GRAFICA DE LA RESPUESTA AL IMPULSO
-plt.figure(2)
-t = np.linspace(0, 5, 500)  # Tiempo de simulación a 5 segundos
-time, response = ctrl.impulse_response(T_no_sintonizado, T=t)  # Respuesta al impulso
+        # Crear un marco para los sliders
+        self.slider_frame = ttk.Frame(root)
+        self.slider_frame.pack(side='left', padx=10, pady=10)
 
-# Invertir la respuesta al impulso para que coincida con MATLAB
-response = -response
+        # Inicializar parámetros del sistema del péndulo
+        self.M = 1.0  # Masa del carrito
+        self.m = 0.1  # Masa del péndulo
+        self.l = 1.0  # Longitud del péndulo
+        self.theta_0 = 0.5  # Ángulo inicial
 
-plt.plot(time, response)
-plt.ylim(-2, 2)  # Establecer límites del eje Y entre -2 y 2
-plt.title('Resultado respecto al Ángulo θ')
+        # Crear sliders para M, m y l
+        self.M_slider = self.create_slider("M (Masa del Carrito)", 0.1, 5.0, self.M)
+        self.m_slider = self.create_slider("m (Masa del Péndulo)", 0.01, 2.0, self.m)
+        self.l_slider = self.create_slider("l (Longitud del Péndulo)", 0.1, 2.0, self.l)
 
-# Para sintonizar automáticamente el PID, usamos la librería control (o en su defecto un enfoque manual)
-# Aquí solo actualizamos las constantes manualmente para simular una sintonización
-K_p = 0
-K_i = 9.8
-K_d = 0
-C_sintonizado = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0])  # Transfer Function PID
+        # Crear sliders para Kp, Ki y Kd
+        self.Kp_slider = self.create_slider("Kp", 0, 100, 20)
+        self.Ki_slider = self.create_slider("Ki", 0, 10, 0.7)
+        self.Kd_slider = self.create_slider("Kd", 0, 20, 5)
 
-# SISTEMA DE FEEDBACK SINTONIZADO
-T_sintonizado = ctrl.feedback(G * C_sintonizado)
+        # Botón para actualizar las gráficas
+        self.update_button = ttk.Button(self.slider_frame, text="Actualizar Gráficas", command=self.update_plots)
+        self.update_button.pack(pady=10)
 
-# GRAFICA DE LAS RAICES DEL PID SINTONIZADO
-plt.figure(3)
-ctrl.root_locus(T_sintonizado)
-plt.title('Lugar geométrico de las raíces PID sintonizado')
+        # Crear un marco para las gráficas
+        self.plot_frame = ttk.Frame(root)
+        self.plot_frame.pack(side='right', padx=10, pady=10)
 
-# GRAFICA DE LA RESPUESTA AL IMPULSO SINTONIZADO
-plt.figure(4)
-time, response = ctrl.impulse_response(T_sintonizado, T=t)  # Respuesta al impulso
+        # Crear las figuras para las gráficas
+        self.fig, self.axs = plt.subplots(2, 2, figsize=(10, 8))
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.plot_frame)
+        self.canvas.get_tk_widget().pack()
 
-# Invertir la respuesta al impulso para que coincida con MATLAB
-response = -response
+        # Graficar inicialmente
+        self.update_plots()
 
-plt.plot(time, response)
-plt.ylim(-2, 2)  # Establecer límites del eje Y entre -2 y 2
-plt.title('Respuesta péndulo mejorado respecto al Ángulo θ')
+    def create_slider(self, label, min_val, max_val, initial):
+        frame = ttk.Frame(self.slider_frame)
+        frame.pack(pady=5)
+        slider = ttk.Scale(frame, from_=min_val, to=max_val, orient='horizontal', command=lambda e: self.update_plots())
+        slider.set(initial)
+        slider.pack(side='left')
+        label = ttk.Label(frame, text=label)
+        label.pack(side='left')
+        return slider
 
-# GRAFICA DE COMPARACION DE LA RESPUESTA DEL IMPULSO
-plt.figure(5)
-time, response_no_sintonizado = ctrl.impulse_response(T_no_sintonizado, T=t)
-time, response_sintonizado = ctrl.impulse_response(T_sintonizado, T=t)
+    def update_plots(self):
+        # Obtener valores de los sliders
+        M = self.M_slider.get()
+        m = self.m_slider.get()
+        l = self.l_slider.get()
+        Kp = self.Kp_slider.get()
+        Ki = self.Ki_slider.get()
+        Kd = self.Kd_slider.get()
 
-# Invertir la respuesta al impulso para que coincida con MATLAB
-response_no_sintonizado = -response_no_sintonizado
-response_sintonizado = -response_sintonizado
+        # Actualizar el sistema del péndulo con los nuevos parámetros
+        self.pendulum_system = PendulumSystem(M, m, l)
 
-plt.plot(time, response_no_sintonizado, 'b', label='PID no sintonizado')
-plt.plot(time, response_sintonizado, 'r', label='PID sintonizado')
-plt.legend()
-plt.ylim(-2, 2)  # Establecer límites del eje Y entre -2 y 2
-plt.title('Comparación de respuestas al impulso')
+        # Limpiar las gráficas
+        for ax in self.axs.flatten():
+            ax.clear()
 
-# Mostrar las gráficas
-plt.show()
+        # Simulaciones para cada tipo de controlador
+        controllers = {
+            'P': (Kp, 0, 0),
+            'PI': (Kp, Ki, 0),
+            'PD': (Kp, 0, Kd),
+            'PID': (Kp, Ki, Kd)
+        }
+
+        for i, (ctrl_type, gains) in enumerate(controllers.items()):
+            Kp, Ki, Kd = gains
+            time, response = self.pendulum_system.simulate(Kp, Ki, Kd, theta_0=self.theta_0)
+            ax = self.axs[i // 2, i % 2]
+            ax.plot(time, response, label=ctrl_type)
+            ax.set_title(f'Respuesta del Controlador {ctrl_type}')
+            ax.set_xlabel('Tiempo (s)')
+            ax.set_ylabel('Ángulo θ (rad)')
+            ax.grid()
+            ax.legend()
+
+        self.canvas.draw()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = PendulumApp(root)
+    root.mainloop()

@@ -1,34 +1,28 @@
-import gymnasium as gym
-from PIDController import PIDController
+from system.inverted_pendulum import InvertedPendulum
+from system.animation import PendulumAnimation
+from system.plot import plot_step_response
 
-# Inicializa el entorno CartPole
-env = gym.make("CartPole-v1", render_mode="human")
+# Parámetros de prueba del sistema
+car_mass = 1.0
+pendulum_mass = 0.2
+rod_length = 0.5
+gravity = 9.81
 
-# Parámetros del PID para el ángulo del péndulo
-pid = PIDController(kp=5.0, ki=0.1, kd=2.0, setpoint=0.0)  # Setpoint: mantener el péndulo vertical
+# Función de transferencia para la ecuación (3)
+transfer_function = {
+    'numerator': [-1],
+    'denominator': [car_mass * rod_length, 0, -(car_mass + pendulum_mass) * gravity]
+}
 
-# Inicializa el entorno
-observation, info = env.reset()
-dt = 0.02  # Paso de tiempo entre frames (Gymnasium usa aproximadamente 50 fps)
+# Inicializamos el sistema de péndulo invertido
+inverted_pendulum = InvertedPendulum(transfer_function)
 
-try:
-    for _ in range(2000):
-        # Obtén la posición y el ángulo del sistema
-        cart_position, cart_velocity, pole_angle, pole_angular_velocity = observation
+# Obtenemos datos de la respuesta al escalón
+time_steps, response = inverted_pendulum.get_step_response_data()
 
-        # El controlador PID controla el ángulo del péndulo
-        control_signal = pid.update(pole_angle, dt)
+# Creamos y mostramos la animación del péndulo invertido
+animation = PendulumAnimation(time_steps, response, rod_length)
+animation.show_animation()
 
-        # Traducir la señal del controlador a una acción discreta
-        # Gymnasium solo admite acciones discretas {0: empuje izquierda, 1: empuje derecha}.
-        action = 1 if control_signal > 0 else 0
-
-        # Realiza un paso en el entorno con la acción
-        observation, reward, done, truncated, info = env.step(action)
-
-        # Reinicia el entorno si termina el episodio
-        if done or truncated:
-            observation, info = env.reset()
-
-finally:
-    env.close()
+# Mostramos el gráfico de la respuesta al escalón
+plot_step_response(time_steps, response)

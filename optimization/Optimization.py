@@ -1,25 +1,74 @@
-import numpy as np
-from scipy.optimize import differential_evolution
+import random
 
 class PIDOptimizer:
-    def __init__(self, pendulum_system, theta_0=0, t_end=5, steps=500):
-        # pendulum_system: Instancia del sistema de péndulo
-        # theta_0: Ángulo inicial del péndulo
-        # t_end: Tiempo final de la simulación
-        # steps: Número de pasos de tiempo en la simulación
-        self.pendulum_system = pendulum_system
-        self.theta_0 = theta_0
-        self.t_end = t_end
-        self.steps = steps
+    def __init__(self, transfer_function, car_mass, pendulum_mass, rod_length, gravity,
+                 population_size=20, generations=50, mutation_rate=0.1):
+        self.transfer_function = transfer_function
+        self.car_mass = car_mass
+        self.pendulum_mass = pendulum_mass
+        self.rod_length = rod_length
+        self.gravity = gravity
+        self.population_size = population_size
+        self.generations = generations
+        self.mutation_rate = mutation_rate
 
-    def cost_function(self, params):
-        # Calcula el error total
-        K_p, K_i, K_d = params
-        time, response = self.pendulum_system.simulate(K_p, K_i, K_d, theta_0=self.theta_0, t_end=self.t_end, steps=self.steps)
-        error = np.sum(np.abs(response))  # Error total como suma de valores absolutos
-        return error
+        # Iniciar población aleatoria con valores iniciales para Kp, Ki y Kd
+        self.population = [self.random_parameters() for _ in range(population_size)]
 
-    def optimize(self, bounds):
-        # bounds: [(min, max), (min, max), (min, max)]
-        result = differential_evolution(self.cost_function, bounds, strategy='best1bin', maxiter=100, popsize=15, seed=42)
-        return result.x  # Devuelve las constantes optimizadas
+    def random_parameters(self):
+        # Devuelve un conjunto aleatorio de parámetros (Kp, Ki, Kd)
+        return [random.uniform(0, 10) for _ in range(3)]
+
+    def simulate_system(self, Kp, Ki, Kd):
+        # Aquí debes llamar a tu clase InvertedPendulum para simular el sistema
+        # y calcular su rendimiento basado en la estabilidad y control del sistema.
+
+        from system.inverted_pendulum import InvertedPendulum
+
+        transfer_function = self.transfer_function
+        pendulum = InvertedPendulum(transfer_function)
+
+        # Simula tu sistema con los parámetros PID actuales
+        time_pid, response_pid = pendulum.simulate_with_pid(Kp, Ki, Kd)
+
+        # Calcular fitness basándose en el error de respuesta y estabilidad
+        error = sum(abs(response_pid))  # Ejemplo básico de fitness basado en error
+
+        return -error  # Queremos minimizar el error
+
+    def fitness(self, parameters):
+        Kp, Ki, Kd = parameters
+        return self.simulate_system(Kp, Ki, Kd)
+
+    def optimize_parameters(self):
+        for generation in range(self.generations):
+            # Evaluar la población actual
+            scored_population = [(individual, self.fitness(individual)) for individual in self.population]
+            scored_population.sort(key=lambda x: x[1], reverse=True)
+
+            # Mantener la mejor población después de cada generación
+            self.population = [individual for individual, _ in scored_population]
+
+            new_population = []
+
+            for i in range(0, self.population_size, 2):
+                if i+1 < self.population_size:
+                    parent1 = self.population[i]
+                    parent2 = self.population[i+1]
+
+                    # Cruza promediando parámetros entre padres
+                    child = [(p1 + p2) / 2 for p1, p2 in zip(parent1, parent2)]
+
+                    # Aplica mutación aleatoria
+                    if random.random() < self.mutation_rate:
+                        child = [param + random.uniform(-1, 1) for param in child]
+
+                    new_population.append(child)
+
+            self.population = new_population
+
+            # Mejor solución encontrada hasta el momento
+            best_params = self.population[0]
+            print(f'Generación {generation+1}, Mejor PID: Kp={best_params[0]}, Ki={best_params[1]}, Kd={best_params[2]}')
+
+        return self.population[0]  # Mejor conjunto de parámetros PID encontrado

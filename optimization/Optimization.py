@@ -51,19 +51,23 @@ class PIDOptimizer:
 
             new_population = []
 
+            # Asegurarse de que el tamaño de la población sea par
+            if len(self.population) % 2 != 0:
+                self.population = self.population[:-1]  # Elimina el último individuo si es impar
+
+            # Cruza pares de individuos y aplica mutación
             for i in range(0, self.population_size, 2):
-                if i+1 < self.population_size:
-                    parent1 = self.population[i]
-                    parent2 = self.population[i+1]
+                parent1 = self.population[i]
+                parent2 = self.population[i + 1]
 
-                    # Cruza promediando parámetros entre padres
-                    child = [(p1 + p2) / 2 for p1, p2 in zip(parent1, parent2)]
+                # Cruza promediando parámetros entre padres
+                child = [(p1 + p2) / 2 for p1, p2 in zip(parent1, parent2)]
 
-                    # Aplica mutación aleatoria
-                    if random.random() < self.mutation_rate:
-                        child = [param + random.uniform(-1, 1) for param in child]
+                # Aplica mutación aleatoria con una pequeña probabilidad
+                if random.random() < self.mutation_rate:
+                    child = [param + random.uniform(-1, 1) for param in child]
 
-                    new_population.append(child)
+                new_population.append(child)
 
             self.population = new_population
 

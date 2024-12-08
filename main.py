@@ -38,12 +38,3 @@ time_1_pid, response_1_pid = pendulum_1.simulate_with_pid(K_p, K_i, K_d)
 pendulum_1.plot_response(time_1_pid, response_1_pid, "Respuesta con PID (Sistema 1)")
 animation_1_pid = PendulumAnimation(time_1_pid, response_1_pid, rod_length)
 animation_1_pid.create_animation()
-
-optimizer = PIDOptimizer(transfer_function_1, car_mass, pendulum_mass, rod_length, gravity)
-best_pid = optimizer.optimize_parameters()
-
-# Mostrar parámetros PID optimizados
-print(f"Parámetros PID ideales después de optimización:")
-print(f"Kp = {best_pid['Kp']}")
-print(f"Ki = {best_pid['Ki']}")
-print(f"Kd = {best_pid['Kd']}")

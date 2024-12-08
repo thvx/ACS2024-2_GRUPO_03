@@ -1,5 +1,7 @@
 from system.inverted_pendulum import InvertedPendulum
 from system.animation import PendulumAnimation
+from optimization.Optimization import PIDOptimizer
+from design_implementation.PID import PendulumSystem
 
 # Parámetros del sistema
 car_mass = 1.0
@@ -31,7 +33,7 @@ animation_1_open.create_animation()
 
 # Con PID
 print("Con PID:")
-K_p, K_i, K_d = 50, 10, 40
+K_p, K_i, K_d = 100, 1, 10
 time_1_pid, response_1_pid = pendulum_1.simulate_with_pid(K_p, K_i, K_d)
 pendulum_1.plot_response(time_1_pid, response_1_pid, "Respuesta con PID (Sistema 1)")
 animation_1_pid = PendulumAnimation(time_1_pid, response_1_pid, rod_length)

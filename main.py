@@ -1,6 +1,9 @@
 from system.inverted_pendulum import InvertedPendulum
 from system.animation import PendulumAnimation
 from optimization.Optimization import PIDOptimizer
+import design_implementation.PID
+import tkinter as tk
+from tkinter import ttk
 
 # Parámetros del sistema
 car_mass = 1.0
@@ -42,6 +45,9 @@ pendulum_1.plot_response(time_1_open, response_1_open, y_label_function_angle, "
 # Con PID
 print("Con PID:")
 K_p, K_i, K_d = 5, 0.001, 0.02
+root = tk.Tk()
+app = design_implementation.PID.PendulumApp(root)
+root.mainloop()
 time_1_pid, response_1_pid = pendulum_1.simulate_with_pid(K_p, K_i, K_d)
 animation_1_pid = PendulumAnimation(time_1_pid, response_1_pid, rod_length)
 animation_1_pid.create_animation()

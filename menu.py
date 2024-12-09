@@ -4,7 +4,10 @@ from system.animation import PendulumAnimation
 from optimization.Optimization import PIDOptimizer
 from filtro_kalman.kalmanFilter import KalmanFilter
 import matplotlib.pyplot as plt
+import design_implementation.PID
 import numpy as np
+import tkinter as tk
+
 
 def run_pid_unoptimized():
     """Ejecuta la simulación del PID sin optimizar."""
@@ -19,6 +22,10 @@ def run_pid_unoptimized():
     animation.create_animation()
     pendulum.plot_response(time, response, "Ángulo θ (rad)", "PID Sin Optimizar")
 
+def run_pid_simulacion():
+    root = tk.Tk()
+    app = design_implementation.PID.PendulumApp(root)
+    root.mainloop()
 
 def run_pid_optimized():
     """Ejecuta la simulación del PID optimizado."""
@@ -92,6 +99,10 @@ label.pack(pady=10)
 # Botones de opciones
 btn_pid_unoptimized = tk.Button(root, text="PID Sin Optimizar", font=("Arial", 12),
                                  command=run_pid_unoptimized)
+btn_pid_unoptimized.pack(pady=5)
+
+btn_pid_unoptimized = tk.Button(root, text="Simulacion PID", font=("Arial", 12),
+                                 command=run_pid_simulacion)
 btn_pid_unoptimized.pack(pady=5)
 
 btn_pid_optimized = tk.Button(root, text="PID Optimizado", font=("Arial", 12),

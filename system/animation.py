@@ -1,27 +1,20 @@
 import plotly.graph_objects as go
 import numpy as np
 
+
 class PendulumAnimation:
     def __init__(self, time_steps, response, rod_length, cart_motion=None):
-        """
-        Inicializa la animación del péndulo.
-        
-        :param time_steps: Array de tiempos.
-        :param response: Respuesta angular del péndulo.
-        :param rod_length: Longitud de la varilla del péndulo.
-        :param cart_motion: Array opcional que define el desplazamiento del carrito en cada paso.
-        """
-        self.time_steps = time_steps
-        self.response = response
-        self.rod_length = rod_length
-        self.cart_motion = cart_motion
+        self.time_steps = time_steps    # Array de tiempos
+        self.response = response        # Array de respuestas
+        self.rod_length = rod_length    # Longitud de la varilla del péndulo
+        self.cart_motion = cart_motion  # Array opcional que define el desplazamiento del carrito en cada paso
 
     def create_animation(self):
-        """Crea una animación basada en los datos de la simulación."""
         frames = []  # Lista para almacenar los frames de la animación
         x_data = 0  # Posición inicial del carrito
 
         for i in range(len(self.time_steps)):
+            # Calculamos el ángulo y ajusta para la posición vertical invertida
             theta = self.response[i]
             adjusted_theta = np.pi - theta
 

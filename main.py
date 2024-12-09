@@ -47,3 +47,13 @@ time_1_optimized, response_1_optimized = pendulum_1.simulate_with_pid(K_p_optimi
 pendulum_1.plot_response(time_1_optimized, response_1_optimized, "Respuesta con PID Optimizado (Sistema 1)")
 animation_1_optimized = PendulumAnimation(time_1_optimized, response_1_optimized, rod_length)
 animation_1_optimized.create_animation()
+
+print("Con fuerza aplicada:")
+# Simulación del péndulo con PID
+time, response = pendulum_1.simulate_with_pid(K_p=K_p_optimized, K_i=K_i_optimized, K_d=K_d_optimized)
+
+cart_motion = 0.1 * time  # El carrito se mueve hacia la derecha linealmente
+
+# Crear animación
+animation = PendulumAnimation(time, response, rod_length=1.0, cart_motion=cart_motion)
+animation.create_animation()

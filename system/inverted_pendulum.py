@@ -9,13 +9,13 @@ class InvertedPendulum:
         self.denominator = transfer_function_dict['denominator']
         self.tf = ctrl.TransferFunction(self.numerator, self.denominator)
 
-    def get_transfer_function(self):
-        return self.tf
-
-    def simulate_without_pid(self, t_end=5, steps=500):
-        """Simula la respuesta del sistema sin control (sistema abierto)."""
+    # Simulamos la respuesta del sistema sin control (lazo abierto)
+    def get_step_response(self, t_end=5, steps=500):
+        # Definimos el tiempo de simulación con np.linspace
         time = np.linspace(0, t_end, steps)
+        # Obtenemos la respuesta al escalón utilizando step_response
         time, response = ctrl.step_response(self.tf, T=time)
+
         return time, response
 
     def simulate_with_pid(self, K_p, K_i, K_d, t_end=5, steps=500):
@@ -28,8 +28,9 @@ class InvertedPendulum:
         time, response = ctrl.step_response(T, T=time)
         return time, response
 
-    def plot_response(self, time, response, y_label, title="Respuesta del sistema"):
-        """Grafica la respuesta del sistema."""
+    # Graficamos la respuesta del sistema
+    @staticmethod
+    def plot_response(time, response, y_label, title="Respuesta del sistema"):
         plt.figure()
         plt.plot(time, response)
         plt.title(title)

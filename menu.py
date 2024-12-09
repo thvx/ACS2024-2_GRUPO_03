@@ -1,9 +1,7 @@
 import tkinter as tk
-from tkinter import messagebox
 from system.inverted_pendulum import InvertedPendulum
 from system.animation import PendulumAnimation
 from optimization.Optimization import PIDOptimizer
-from filtro_kalman.kalmanGraphics import KalmanGraphicsApp
 from filtro_kalman.kalmanFilter import KalmanFilter
 import matplotlib.pyplot as plt
 import numpy as np
@@ -54,14 +52,18 @@ def run_pid_with_kalman_filter():
     noisy_measurements = true_angle + np.random.normal(0, 0.1, size=len(time))
     u_pid = np.zeros_like(time)  # Reemplazar con señal de control PID
 
-    estimates = KalmanFilter.simulate_kalman_with_pid(A, B, C, Q, R, P_init, x_init, time, true_angle, noisy_measurements, u_pid)
+    kalman_estimates = KalmanFilter.simulate_kalman_with_pid(A, B, C, Q, R, P_init, x_init, time, true_angle, noisy_measurements, u_pid)
+
+    # Animación
+    animation = PendulumAnimation(time, true_angle, rod_length=0.5, kalman_estimates=kalman_estimates)
+    animation.create_animation()
 
     # Gráficos
     plt.figure(figsize=(10, 8))
     
     plt.subplot(3, 1, 1)
     plt.plot(time, true_angle, label="Ángulo real")
-    plt.plot(time, estimates[:, 0], label="Estimación Kalman")
+    plt.plot(time, kalman_estimates[:, 0], label="Estimación Kalman")
     plt.title("Ángulo estimado vs real")
     plt.legend()
     
@@ -71,7 +73,7 @@ def run_pid_with_kalman_filter():
     plt.legend()
 
     plt.subplot(3, 1, 3)
-    plt.plot(time, true_angle - estimates[:, 0], label="Error de estimación")
+    plt.plot(time, true_angle - kalman_estimates[:, 0], label="Error de estimación")
     plt.title("Error de estimación")
     plt.legend()
     

@@ -3,10 +3,11 @@ import numpy as np
 
 
 class PendulumAnimation:
-    def __init__(self, time_steps, response, rod_length, cart_motion=None):
+    def __init__(self, time_steps, response, rod_length, kalman_estimates=None, cart_motion=None):
         self.time_steps = time_steps    # Array de tiempos
         self.response = response        # Array de respuestas
         self.rod_length = rod_length    # Longitud de la varilla del péndulo
+        self.kalman_estimates = kalman_estimates # Estimaciones del filtro de kalman
         self.cart_motion = cart_motion  # Array opcional que define el desplazamiento del carrito en cada paso
 
     def create_animation(self):
@@ -15,7 +16,7 @@ class PendulumAnimation:
 
         for i in range(len(self.time_steps)):
             # Calculamos el ángulo y ajusta para la posición vertical invertida
-            theta = self.response[i]
+            theta = self.response[i] if self.kalman_estimates is None else self.kalman_estimates[i, 0]
             adjusted_theta = np.pi - theta
 
             # Si no se proporciona un cart_motion, calcula dinámicamente el movimiento

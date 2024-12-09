@@ -27,27 +27,27 @@ y_label_function_angle = "Ángulo θ (rad)"
 # Sin PID
 print("Sin PID:")
 time_1_open, response_1_open = pendulum_1.simulate_without_pid()
-pendulum_1.plot_response(time_1_open, response_1_open, y_label_function_angle, "Respuesta sin PID (Sistema 1)")
 animation_1_open = PendulumAnimation(time_1_open, response_1_open, rod_length)
 animation_1_open.create_animation()
+pendulum_1.plot_response(time_1_open, response_1_open, y_label_function_angle, "Respuesta sin PID (Sistema 1)")
 
 # Con PID
 print("Con PID:")
 K_p, K_i, K_d = 5, 0.001, 0.02
 time_1_pid, response_1_pid = pendulum_1.simulate_with_pid(K_p, K_i, K_d)
-pendulum_1.plot_response(time_1_pid, response_1_pid, y_label_function_angle, "Respuesta con PID (Sistema 1)")
 animation_1_pid = PendulumAnimation(time_1_pid, response_1_pid, rod_length)
 animation_1_pid.create_animation()
+pendulum_1.plot_response(time_1_pid, response_1_pid, y_label_function_angle, "Respuesta con PID (Sistema 1)")
 
 optimizer = PIDOptimizer(transfer_function_angle)
 optimized_params = optimizer.optimize_pid()
 
 K_p_optimized, K_i_optimized, K_d_optimized = optimizer.simulate_with_optimized_pid(*optimized_params)
 time_1_optimized, response_1_optimized = pendulum_1.simulate_with_pid(K_p_optimized, K_i_optimized, K_d_optimized)
-pendulum_1.plot_response(time_1_optimized, response_1_optimized,
-                         y_label_function_angle, "Respuesta con PID Optimizado (Sistema 1)")
 animation_1_optimized = PendulumAnimation(time_1_optimized, response_1_optimized, rod_length)
 animation_1_optimized.create_animation()
+pendulum_1.plot_response(time_1_optimized, response_1_optimized,
+                         y_label_function_angle, "Respuesta con PID Optimizado (Sistema 1)")
 
 print("Con fuerza aplicada:")
 # Simulación del péndulo con PID

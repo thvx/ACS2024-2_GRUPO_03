@@ -33,8 +33,17 @@ animation_1_open.create_animation()
 
 # Con PID
 print("Con PID:")
-K_p, K_i, K_d = 100, 1, 10
+K_p, K_i, K_d = 5, 0.001, 0.02
 time_1_pid, response_1_pid = pendulum_1.simulate_with_pid(K_p, K_i, K_d)
 pendulum_1.plot_response(time_1_pid, response_1_pid, "Respuesta con PID (Sistema 1)")
 animation_1_pid = PendulumAnimation(time_1_pid, response_1_pid, rod_length)
 animation_1_pid.create_animation()
+
+optimizer = PIDOptimizer(transfer_function_1)
+optimized_params = optimizer.optimize_pid()
+
+K_p_optimized, K_i_optimized, K_d_optimized = optimizer.simulate_with_optimized_pid(*optimized_params)
+time_1_optimized, response_1_optimized = pendulum_1.simulate_with_pid(K_p_optimized, K_i_optimized, K_d_optimized)
+pendulum_1.plot_response(time_1_optimized, response_1_optimized, "Respuesta con PID Optimizado (Sistema 1)")
+animation_1_optimized = PendulumAnimation(time_1_optimized, response_1_optimized, rod_length)
+animation_1_optimized.create_animation()

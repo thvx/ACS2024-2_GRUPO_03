@@ -28,12 +28,12 @@ class InvertedPendulum:
         time, response = ctrl.step_response(T, T=time)
         return time, response
 
-    def plot_response(self, time, response, title="Respuesta del sistema"):
+    def plot_response(self, time, response, y_label, title="Respuesta del sistema"):
         """Grafica la respuesta del sistema."""
         plt.figure()
         plt.plot(time, response)
         plt.title(title)
         plt.xlabel("Tiempo (s)")
-        plt.ylabel("Ángulo θ (rad)")
+        plt.ylabel(y_label)
         plt.grid()
         plt.show()

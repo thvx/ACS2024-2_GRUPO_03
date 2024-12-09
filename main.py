@@ -1,28 +1,68 @@
 from system.inverted_pendulum import InvertedPendulum
 from system.animation import PendulumAnimation
-from system.plot import plot_step_response
+from optimization.Optimization import PIDOptimizer
 
-# Parámetros de prueba del sistema
+# Parámetros del sistema
 car_mass = 1.0
 pendulum_mass = 0.2
 rod_length = 0.5
 gravity = 9.81
 
-# Función de transferencia para la ecuación (3)
-transfer_function = {
+# Funciones de transferencia
+transfer_function_angle = {
     'numerator': [-1],
     'denominator': [car_mass * rod_length, 0, -(car_mass + pendulum_mass) * gravity]
 }
 
-# Inicializamos el sistema de péndulo invertido
-inverted_pendulum = InvertedPendulum(transfer_function)
+transfer_function_position = {
+    'numerator': [rod_length, 0, -gravity],
+    'denominator': [rod_length * car_mass, 0, -(car_mass + pendulum_mass) * gravity, 0, 0]
+}
 
-# Obtenemos datos de la respuesta al escalón
-time_steps, response = inverted_pendulum.get_step_response_data()
+# Sistemas de péndulo invertido
+pendulum_1 = InvertedPendulum(transfer_function_angle)
+pendulum_2 = InvertedPendulum(transfer_function_position)
 
-# Creamos y mostramos la animación del péndulo invertido
-animation = PendulumAnimation(time_steps, response, rod_length)
-animation.show_animation()
+y_label_function_angle = "Ángulo θ (rad)"
 
-# Mostramos el gráfico de la respuesta al escalón
-plot_step_response(time_steps, response)
+print('Simulación con la función de transferencia que involucra la posición del carrito:')
+time_2_open, response_2_open = pendulum_2.get_step_response()
+animation_2_open = PendulumAnimation(time_2_open, response_2_open, rod_length)
+animation_2_open.create_animation()
+pendulum_2.plot_response(time_2_open, response_2_open, y_label_function_angle, "Respuesta sin PID (Sistema 2)")
+
+print('Simulación con la función de transferencia que involucra el ángulo:')
+# Sin PID
+print("Sin PID:")
+time_1_open, response_1_open = pendulum_1.get_step_response()
+animation_1_open = PendulumAnimation(time_1_open, response_1_open, rod_length)
+animation_1_open.create_animation()
+pendulum_1.plot_response(time_1_open, response_1_open, y_label_function_angle, "Respuesta sin PID (Sistema 1)")
+
+# Con PID
+print("Con PID:")
+K_p, K_i, K_d = 5, 0.001, 0.02
+time_1_pid, response_1_pid = pendulum_1.simulate_with_pid(K_p, K_i, K_d)
+animation_1_pid = PendulumAnimation(time_1_pid, response_1_pid, rod_length)
+animation_1_pid.create_animation()
+pendulum_1.plot_response(time_1_pid, response_1_pid, y_label_function_angle, "Respuesta con PID (Sistema 1)")
+
+optimizer = PIDOptimizer(transfer_function_angle)
+optimized_params = optimizer.optimize_pid()
+
+K_p_optimized, K_i_optimized, K_d_optimized = optimizer.simulate_with_optimized_pid(*optimized_params)
+time_1_optimized, response_1_optimized = pendulum_1.simulate_with_pid(K_p_optimized, K_i_optimized, K_d_optimized)
+animation_1_optimized = PendulumAnimation(time_1_optimized, response_1_optimized, rod_length)
+animation_1_optimized.create_animation()
+pendulum_1.plot_response(time_1_optimized, response_1_optimized,
+                         y_label_function_angle, "Respuesta con PID Optimizado (Sistema 1)")
+
+print("Con fuerza aplicada:")
+# Simulación del péndulo con PID
+time, response = pendulum_1.simulate_with_pid(K_p=K_p_optimized, K_i=K_i_optimized, K_d=K_d_optimized)
+
+cart_motion = 0.1 * time  # El carrito se mueve hacia la derecha linealmente
+
+# Crear animación
+animation = PendulumAnimation(time, response, rod_length=1.0, cart_motion=cart_motion)
+animation.create_animation()

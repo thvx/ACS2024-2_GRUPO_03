@@ -1,89 +1,108 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
-from tkinter import ttk
-from DisenoPID.PID import PendulumApp
-from Optimizacion.Optimization import PendulumPIDOptimizer
-from System.animation import PendulumAnimation
-from System.inverted_pendulum import InvertedPendulum
-from System.plot import plot_step_response
-from FiltroKalman.kalmanGraphics import KalmanGraphicsApp
+from tkinter import messagebox
+from system.inverted_pendulum import InvertedPendulum
+from system.animation import PendulumAnimation
+from optimization.Optimization import PIDOptimizer
+from filtro_kalman.kalmanGraphics import KalmanGraphicsApp
+from filtro_kalman.kalmanFilter import KalmanFilter
+import matplotlib.pyplot as plt
+import numpy as np
 
-class MainMenu:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Sistema de Péndulo Invertido")
+def run_pid_unoptimized():
+    """Ejecuta la simulación del PID sin optimizar."""
+    # Configuración del sistema
+    transfer_function_angle = {
+        'numerator': [-1],
+        'denominator': [1.0 * 0.5, 0, -(1.0 + 0.2) * 9.81]
+    }
+    pendulum = InvertedPendulum(transfer_function_angle)
+    time, response = pendulum.get_step_response()
+    animation = PendulumAnimation(time, response, rod_length=0.5)
+    animation.create_animation()
+    pendulum.plot_response(time, response, "Ángulo θ (rad)", "PID Sin Optimizar")
 
-        # Título principal
-        title_label = ttk.Label(root, text="Menú Principal", font=("Arial", 16, "bold"))
-        title_label.pack(pady=10)
 
-        # Opciones del menú
-        ttk.Button(root, text="PID sin optimización", command=self.open_pid_app).pack(pady=10)
-        ttk.Button(root, text="PID optimizado", command=self.show_pid_optimized).pack(pady=10)
-        ttk.Button(root, text="Péndulo invertido con filtro de Kalman", command=self.kalman_option).pack(pady=10)
+def run_pid_optimized():
+    """Ejecuta la simulación del PID optimizado."""
+    # Configuración del sistema
+    transfer_function_angle = {
+        'numerator': [-1],
+        'denominator': [1.0 * 0.5, 0, -(1.0 + 0.2) * 9.81]
+    }
+    pendulum = InvertedPendulum(transfer_function_angle)
+    optimizer = PIDOptimizer(transfer_function_angle)
+    K_p, K_i, K_d = optimizer.optimize_pid()
+    time, response = pendulum.simulate_with_pid(K_p, K_i, K_d)
+    animation = PendulumAnimation(time, response, rod_length=0.5)
+    animation.create_animation()
+    pendulum.plot_response(time, response, "Ángulo θ (rad)", "PID Optimizado")
 
-    def open_pid_app(self):
-        """Abre la interfaz de diseño e implementación de PID sin optimización."""
-        pid_window = tk.Toplevel(self.root)
-        PendulumApp(pid_window)
 
-    def show_pid_optimized(self):
-        """Muestra la animación y gráficas del PID optimizado."""
-        # Parámetros iniciales
-        car_mass = 1.0
-        pendulum_mass = 0.2
-        rod_length = 1.0
-        gravity = 9.81
+def run_pid_with_kalman_filter():
+    """Ejecuta la simulación del PID optimizado con filtro de Kalman."""
+    # Configuración del sistema
+    A = np.array([[1, 0.1], [0, 1]])
+    B = np.array([[0], [0.1]])
+    C = np.array([[1, 0]])
+    Q = np.array([[1e-4, 0], [0, 1e-2]])
+    R = np.array([[1e-1]])
+    P_init = np.eye(2)
+    x_init = np.array([[0], [0]])
 
-        # Crear el optimizador
-        optimizer = PendulumPIDOptimizer(M=car_mass, m=pendulum_mass, l=rod_length, g=gravity)
+    time = np.linspace(0, 5, 500)
+    true_angle = np.sin(time)
+    noisy_measurements = true_angle + np.random.normal(0, 0.1, size=len(time))
+    u_pid = np.zeros_like(time)  # Reemplazar con señal de control PID
 
-        # PID inicial y optimización
-        Kp_initial, Ki_initial, Kd_initial = 50, 5, 10
-        bounds = [(0, 100), (0, 10), (0, 50)]  # Límites para los parámetros
-        Kp_opt, Ki_opt, Kd_opt = optimizer.optimize_pid(bounds)
+    estimates = KalmanFilter.simulate_kalman_with_pid(A, B, C, Q, R, P_init, x_init, time, true_angle, noisy_measurements, u_pid)
 
-        # Respuesta inicial y optimizada
-        time_steps = np.linspace(0, 5, 500)
-        _, response_initial = optimizer.simulate_response(Kp_initial, Ki_initial, Kd_initial, time_steps)
-        _, response_optimized = optimizer.simulate_response(Kp_opt, Ki_opt, Kd_opt, time_steps)
+    # Gráficos
+    plt.figure(figsize=(10, 8))
+    
+    plt.subplot(3, 1, 1)
+    plt.plot(time, true_angle, label="Ángulo real")
+    plt.plot(time, estimates[:, 0], label="Estimación Kalman")
+    plt.title("Ángulo estimado vs real")
+    plt.legend()
+    
+    plt.subplot(3, 1, 2)
+    plt.plot(time, noisy_measurements, label="Mediciones ruidosas")
+    plt.title("Ángulo medido")
+    plt.legend()
 
-        # Crear ventana nueva para mostrar resultados
-        optimized_window = tk.Toplevel(self.root)
-        optimized_window.title("PID Optimizado")
+    plt.subplot(3, 1, 3)
+    plt.plot(time, true_angle - estimates[:, 0], label="Error de estimación")
+    plt.title("Error de estimación")
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.show()
 
-        fig_frame = ttk.Frame(optimized_window)
-        fig_frame.pack(fill="both", expand=True)
 
-        # Configurar las gráficas
-        fig, ax = plt.subplots(2, 1, figsize=(8, 6))
-        ax[0].plot(time_steps, response_initial, label="PID Inicial", color="blue")
-        ax[0].set_title("Respuesta sin optimización")
-        ax[0].set_xlabel("Tiempo (s)")
-        ax[0].set_ylabel("Ángulo θ (rad)")
-        ax[0].grid()
-        ax[0].legend()
+# Creación de la interfaz gráfica
+root = tk.Tk()
+root.title("Menú de Simulación PID")
 
-        ax[1].plot(time_steps, response_optimized, label="PID Optimizado", color="red")
-        ax[1].set_title("Respuesta con optimización")
-        ax[1].set_xlabel("Tiempo (s)")
-        ax[1].set_ylabel("Ángulo θ (rad)")
-        ax[1].grid()
-        ax[1].legend()
+# Etiqueta principal
+label = tk.Label(root, text="Seleccione una opción:", font=("Arial", 14))
+label.pack(pady=10)
 
-        # Integrar con Tkinter
-        canvas = FigureCanvasTkAgg(fig, master=fig_frame)
-        canvas.get_tk_widget().pack(fill="both", expand=True)
-        canvas.draw()
+# Botones de opciones
+btn_pid_unoptimized = tk.Button(root, text="PID Sin Optimizar", font=("Arial", 12),
+                                 command=run_pid_unoptimized)
+btn_pid_unoptimized.pack(pady=5)
 
-    def kalman_option(self):
-        """Abre la interfaz de control y gráficos del filtro de Kalman."""
-        kalman_window = tk.Toplevel(self.root)
-        KalmanGraphicsApp(kalman_window)
+btn_pid_optimized = tk.Button(root, text="PID Optimizado", font=("Arial", 12),
+                               command=run_pid_optimized)
+btn_pid_optimized.pack(pady=5)
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = MainMenu(root)
-    root.mainloop()
+btn_pid_kalman = tk.Button(root, text="PID Optimizado con Filtro de Kalman", font=("Arial", 12),
+                           command=run_pid_with_kalman_filter)
+btn_pid_kalman.pack(pady=5)
+
+# Botón para salir
+btn_exit = tk.Button(root, text="Salir", font=("Arial", 12), command=root.quit)
+btn_exit.pack(pady=20)
+
+# Ejecutar la interfaz gráfica
+root.mainloop()

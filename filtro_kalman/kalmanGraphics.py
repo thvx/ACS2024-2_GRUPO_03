@@ -3,7 +3,10 @@ from tkinter import ttk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
-from FiltroKalman.kalmanFilter import KalmanFilter
+from filtro_kalman.kalmanFilter import KalmanFilter
+from optimization.Optimization import PIDOptimizer
+from system.inverted_pendulum import InvertedPendulum
+from system.animation import PendulumAnimation
 
 class KalmanGraphicsApp:
     def __init__(self, root):
@@ -65,40 +68,39 @@ class KalmanGraphicsApp:
         self.R[0, 0] = float(value)
 
     def simulate(self):
-        """Simula el sistema con el filtro de Kalman y muestra los gráficos."""
-        # Configuración de la simulación
+        """
+        Simula el sistema con el filtro de Kalman, PID optimizado y péndulo invertido.
+        """
+        # Parámetros del modelo del péndulo
+        pendulum_params = {'numerator': [1], 'denominator': [1, 2, 1]}  # Ajusta según el sistema real
+        InvertedPendulum(pendulum_params)
+
+        # Optimización PID
+        optimizer = PIDOptimizer(pendulum_params)
+        K_p, K_i, K_d = optimizer.optimize_pid()
+
+        # Generar entrada de control
+        t_end = 5
         steps = 100
-        u = np.zeros((steps, 1))  # Entrada de control
-        true_angle = np.zeros(steps)
-        noisy_measurements = np.zeros(steps)
-        kalman_estimates = np.zeros((steps, self.kalman_filter.x.shape[0]))
+        u = np.zeros((steps, 1))
 
-        # Simulación
-        for t in range(steps):
-            # Dinámica del sistema real
-            true_angle[t] = np.sin(t * 0.1)  # Ejemplo: ángulo real
-            noisy_measurements[t] = true_angle[t] + np.random.normal(0, self.noise_std)
+        # Simulación del péndulo y filtro de Kalman
+        time, true_states, noisy_measurements, kalman_estimates = self.kalman_filter.process_with_pid(K_p, K_i, K_d, u)
 
-            # Predicción y actualización de Kalman
-            self.kalman_filter.predict(u[t])
-            self.kalman_filter.update(np.array([[noisy_measurements[t]]]))
-            kalman_estimates[t] = self.kalman_filter.get_state().flatten()[:2]
+        # Animación del sistema
+        animation = PendulumAnimation(time, true_states[:, 0], rod_length=0.5)
+        animation.create_animation()
 
-        # Actualizar gráficos
+        # Gráficos actualizados
         self.ax[0].clear()
-        self.ax[0].plot(true_angle, label="Ángulo Real", color="blue")
-        self.ax[0].plot(kalman_estimates[:, 0], label="Estimación Kalman", color="red")
-        self.ax[0].set_title("Variación del Ángulo")
+        self.ax[0].plot(time, true_states[:, 0], label="Estado Real", color="blue")
+        self.ax[0].plot(time, kalman_estimates[:, 0], label="Estimación Kalman", color="red")
+        self.ax[0].set_title("Estimación del Estado con Filtro de Kalman")
         self.ax[0].legend()
 
         self.ax[1].clear()
-        self.ax[1].plot(noisy_measurements, label="Medición con Ruido", color="green")
-        self.ax[1].set_title("Ruido de la Medición")
+        self.ax[1].plot(time, noisy_measurements, label="Mediciones Ruidosas", color="green")
+        self.ax[1].set_title("Mediciones Observadas")
         self.ax[1].legend()
-
-        self.ax[2].clear()
-        self.ax[2].plot(kalman_estimates[:, 1], label="Velocidad Estimada", color="purple")
-        self.ax[2].set_title("Ruido del Proceso")
-        self.ax[2].legend()
 
         self.canvas.draw()

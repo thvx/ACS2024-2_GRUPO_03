@@ -1,21 +1,35 @@
-import numpy as np
 import plotly.graph_objects as go
-
+import numpy as np
 
 class PendulumAnimation:
-    def __init__(self, time_steps, response, rod_length):
+    def __init__(self, time_steps, response, rod_length, cart_motion=None):
+        """
+        Inicializa la animación del péndulo.
+        
+        :param time_steps: Array de tiempos.
+        :param response: Respuesta angular del péndulo.
+        :param rod_length: Longitud de la varilla del péndulo.
+        :param cart_motion: Array opcional que define el desplazamiento del carrito en cada paso.
+        """
         self.time_steps = time_steps
-        self.response = response * 100  # Aumentamos la escala para una animación más rápida
+        self.response = response
         self.rod_length = rod_length
+        self.cart_motion = cart_motion
 
     def create_animation(self):
+        """Crea una animación basada en los datos de la simulación."""
         frames = []  # Lista para almacenar los frames de la animación
         x_data = 0  # Posición inicial del carrito
 
         for i in range(len(self.time_steps)):
-            # Calculamos el ángulo y ajusta para la posición vertical invertida
             theta = self.response[i]
             adjusted_theta = np.pi - theta
+
+            # Si no se proporciona un cart_motion, calcula dinámicamente el movimiento
+            if self.cart_motion is None:
+                x_data += 0.05 * np.sin(theta)
+            else:
+                x_data = self.cart_motion[i]
 
             # Coordenadas del péndulo
             pendulum_x = [x_data, x_data + self.rod_length * np.sin(adjusted_theta)]
@@ -29,25 +43,20 @@ class PendulumAnimation:
                 go.Scatter(x=pendulum_x, y=pendulum_y, mode='lines+markers', line=dict(width=4), marker=dict(size=8))
             ]))
 
-            # Desplazamos el carrito proporcionalmente al ángulo
-            x_data += 0.05 * np.sin(theta)
-
         # Creamos la figura de la animación
         fig = go.Figure(
             data=[
-                # Carrito en su posición inicial
                 go.Scatter(x=[0, 0], y=[0, 0], mode='lines', line=dict(width=10)),
-                # Péndulo en su posición inicial
                 go.Scatter(x=[0, 0], y=[0, 0], mode='lines+markers', line=dict(width=4), marker=dict(size=8))
             ],
             layout=go.Layout(
-                # Configuración de los ejes
-                xaxis=dict(range=[-1, 1], autorange=False),
+                xaxis=dict(range=[-2, 2], autorange=False),
                 yaxis=dict(range=[-1.5, 1.5], autorange=False),
-                # Botones para controlar la animación
-                updatemenus=[dict(type="buttons", showactive=False, buttons=[dict(label="Play", method="animate", args=[None, {"frame": {"duration": 20}, "fromcurrent": True}])])],
+                updatemenus=[dict(type="buttons", showactive=False,
+                                  buttons=[dict(label="Play", method="animate",
+                                                args=[None, {"frame": {"duration": 20}, "fromcurrent": True}])])],
             ),
-            frames=frames  # Añadimos los frames creados
+            frames=frames
         )
 
         fig.show()

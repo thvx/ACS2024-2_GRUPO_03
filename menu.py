@@ -10,7 +10,6 @@ import tkinter as tk
 
 
 def run_pid_unoptimized():
-    """Ejecuta la simulación del PID sin optimizar."""
     # Configuración del sistema
     transfer_function_angle = {
         'numerator': [-1],
@@ -28,7 +27,6 @@ def run_pid_simulacion():
     root.mainloop()
 
 def run_pid_optimized():
-    """Ejecuta la simulación del PID optimizado."""
     # Configuración del sistema
     transfer_function_angle = {
         'numerator': [-1],
@@ -44,7 +42,6 @@ def run_pid_optimized():
 
 
 def run_pid_with_kalman_filter():
-    """Ejecuta la simulación del PID optimizado con filtro de Kalman."""
     # Configuración del sistema
     A = np.array([[1, 0.1], [0, 1]])
     B = np.array([[0], [0.1]])
@@ -65,7 +62,7 @@ def run_pid_with_kalman_filter():
     animation = PendulumAnimation(time, true_angle, rod_length=0.5, kalman_estimates=kalman_estimates)
     animation.create_animation()
 
-    # Gráficos
+    # Graficar resultados
     plt.figure(figsize=(10, 8))
     
     plt.subplot(3, 1, 1)

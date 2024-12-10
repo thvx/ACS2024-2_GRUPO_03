@@ -11,7 +11,7 @@ pendulum_mass = 0.2
 rod_length = 0.5
 gravity = 9.81
 
-# Funciones de transferencia
+# Funciones de transferencia en base a los datos del sistema
 transfer_function_angle = {
     'numerator': [-1],
     'denominator': [car_mass * rod_length, 0, -(car_mass + pendulum_mass) * gravity]
@@ -44,7 +44,7 @@ pendulum_1.plot_response(time_1_open, response_1_open, y_label_function_angle, "
 
 # Con PID
 print("Con PID:")
-K_p, K_i, K_d = 5, 0.001, 0.02
+K_p, K_i, K_d = 1e-15, 0.4e-17, 1.5e-15
 root = tk.Tk()
 app = design_implementation.PID.PendulumApp(root)
 root.mainloop()

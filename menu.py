@@ -8,8 +8,25 @@ import design_implementation.PID
 import numpy as np
 import tkinter as tk
 
+# Simulación con la función de transferencia que involucra la posición del carrito
+def run_system_function_position():
+    car_mass = 1.0
+    pendulum_mass = 0.2
+    rod_length = 0.5
+    gravity = 9.81
+    # Configuración del sistema
+    transfer_function_position = {
+        'numerator': [rod_length, 0, -gravity],
+        'denominator': [rod_length * car_mass, 0, -(car_mass + pendulum_mass) * gravity, 0, 0]
+    }
+    pendulum = InvertedPendulum(transfer_function_position)
+    time, response = pendulum.get_step_response()
+    animation = PendulumAnimation(time, response, rod_length=0.5)
+    animation.create_animation()
+    pendulum.plot_response(time, response, "Posición X (m)", "Respuesta sin PID (posición)")
 
-def run_pid_unoptimized():
+# Simulación con la función de transferencia que involucra el ángulo
+def run_system_function_angle():
     # Configuración del sistema
     transfer_function_angle = {
         'numerator': [-1],
@@ -19,11 +36,22 @@ def run_pid_unoptimized():
     time, response = pendulum.get_step_response()
     animation = PendulumAnimation(time, response, rod_length=0.5)
     animation.create_animation()
-    pendulum.plot_response(time, response, "Ángulo θ (rad)", "PID Sin Optimizar")
+    pendulum.plot_response(time, response, "Ángulo θ (rad)", "Respuesta sin PID (ángulo)")
 
 def run_pid_simulacion():
+    transfer_function_angle = {
+        'numerator': [-1],
+        'denominator': [1.0 * 0.5, 0, -(1.0 + 0.2) * 9.81]
+    }
+    pendulum = InvertedPendulum(transfer_function_angle)
+    time, response = pendulum.simulate_with_pid(1e-10, 0.4e-12, 1.5e-10)
+    cart_motion = 0.1 * time  # El carrito se mueve hacia la derecha linealmente
+
+    # Crear animación
+    animation = PendulumAnimation(time, response, rod_length=1.0, cart_motion=cart_motion)
+    animation.create_animation()
     root = tk.Tk()
-    app = design_implementation.PID.PendulumApp(root)
+    design_implementation.PID.PendulumApp(root)
     root.mainloop()
 
 def run_pid_optimized():
@@ -36,54 +64,66 @@ def run_pid_optimized():
     optimizer = PIDOptimizer(transfer_function_angle)
     K_p, K_i, K_d = optimizer.optimize_pid()
     time, response = pendulum.simulate_with_pid(K_p, K_i, K_d)
-    animation = PendulumAnimation(time, response, rod_length=0.5)
+    cart_motion = 0.1 * time  # El carrito se mueve hacia la derecha linealmente
+    animation = PendulumAnimation(time, response, rod_length=0.5, cart_motion=cart_motion)
     animation.create_animation()
     pendulum.plot_response(time, response, "Ángulo θ (rad)", "PID Optimizado")
 
 
 def run_pid_with_kalman_filter():
-    # Configuración del sistema
+   # Simulación con la función de transferencia que involucra el ángulo
+    transfer_function_angle = {
+        'numerator': [-1],
+        'denominator': [1.0 * 0.5, 0, -(1.0 + 0.2) * 9.81]
+    }
+    pendulum = InvertedPendulum(transfer_function_angle)
+    time, response = pendulum.simulate_with_pid(1e-15, 0.4e-17, 1.5e-15)
+    cart_motion = 0.1 * time
+
+    # Configurar el filtro de Kalman
     A = np.array([[1, 0.1], [0, 1]])
     B = np.array([[0], [0.1]])
     C = np.array([[1, 0]])
     Q = np.array([[1e-4, 0], [0, 1e-2]])
-    R = np.array([[1e-1]])
+    R = np.array([[0.1]])
     P_init = np.eye(2)
     x_init = np.array([[0], [0]])
+    kalman_filter = KalmanFilter(A, B, C, Q, R, P_init, x_init)
 
-    time = np.linspace(0, 5, 500)
+    # Simulación
+    t_end = 5
+    steps = 500
+    time = np.linspace(0, t_end, steps)
     true_angle = np.sin(time)
     noisy_measurements = true_angle + np.random.normal(0, 0.1, size=len(time))
-    u_pid = np.zeros_like(time)  # Reemplazar con señal de control PID
 
-    kalman_estimates = KalmanFilter.simulate_kalman_with_pid(A, B, C, Q, R, P_init, x_init, time, true_angle, noisy_measurements, u_pid)
+    kalman_estimates = []
+    for t, y in zip(time, noisy_measurements):
+        kalman_filter.predict(np.array([[0]]))  # Control sin fuerza inicial
+        kalman_filter.update(np.array([[y]]))
+        kalman_estimates.append(kalman_filter.get_state().flatten())
+    kalman_estimates = np.array(kalman_estimates)
 
-    # Animación
-    animation = PendulumAnimation(time, true_angle, rod_length=0.5, kalman_estimates=kalman_estimates)
+    # Crear animación
+    animation = PendulumAnimation(time, response, rod_length=1.0, cart_motion=cart_motion, kalman_estimates=kalman_estimates)
     animation.create_animation()
 
     # Graficar resultados
     plt.figure(figsize=(10, 8))
-    
-    plt.subplot(3, 1, 1)
+
+    plt.subplot(2, 1, 1)
     plt.plot(time, true_angle, label="Ángulo real")
     plt.plot(time, kalman_estimates[:, 0], label="Estimación Kalman")
-    plt.title("Ángulo estimado vs real")
-    plt.legend()
-    
-    plt.subplot(3, 1, 2)
-    plt.plot(time, noisy_measurements, label="Mediciones ruidosas")
-    plt.title("Ángulo medido")
+    plt.title("Ángulo vs Tiempo")
     plt.legend()
 
-    plt.subplot(3, 1, 3)
-    plt.plot(time, true_angle - kalman_estimates[:, 0], label="Error de estimación")
-    plt.title("Error de estimación")
+    plt.subplot(2, 1, 2)
+    plt.plot(time, noisy_measurements, label="Mediciones ruidosas")
+    plt.title("Ruido vs Tiempo")
     plt.legend()
-    
+
     plt.tight_layout()
     plt.show()
-
 
 # Creación de la interfaz gráfica
 root = tk.Tk()
@@ -94,9 +134,13 @@ label = tk.Label(root, text="Seleccione una opción:", font=("Arial", 14))
 label.pack(pady=10)
 
 # Botones de opciones
-btn_pid_unoptimized = tk.Button(root, text="PID Sin Optimizar", font=("Arial", 12),
-                                 command=run_pid_unoptimized)
-btn_pid_unoptimized.pack(pady=5)
+btn_withoud_pid_position = tk.Button(root, text="Sistema sin PID (posición)", font=("Arial", 12),
+                                 command=run_system_function_position)
+btn_withoud_pid_position.pack(pady=5)
+
+btn_withoud_pid_angle = tk.Button(root, text="Sistema sin PID (ángulo)", font=("Arial", 12),
+                                 command=run_system_function_angle)
+btn_withoud_pid_angle.pack(pady=5)
 
 btn_pid_unoptimized = tk.Button(root, text="Simulacion PID", font=("Arial", 12),
                                  command=run_pid_simulacion)

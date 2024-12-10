@@ -46,36 +46,37 @@ class KalmanFilter:
         """
         return self.x
     
-    def process_with_pid(self, K_p, K_i, K_d, u, theta_0=0, t_end=5, steps=500):
+    def process_with_pid(self, u, t_end=5, steps=500):
         """
         Procesa los datos de un sistema PID optimizado usando el filtro de Kalman.
         Args:
-            K_p, K_i, K_d: Constantes PID.
             u (ndarray): Señal de control.
-            theta_0: Ángulo inicial.
             t_end: Duración de la simulación.
             steps: Número de pasos de simulación.
         Returns:
             ndarray: Estados estimados por el filtro.
         """
         time = np.linspace(0, t_end, steps)
-        true_states = np.zeros((steps, self.x.shape[0]))
-        noisy_measurements = np.zeros(steps)
-        kalman_estimates = np.zeros((steps, self.x.shape[0]))
+        true_states = []
+        kalman_estimates = []
+        noisy_measurements = []
 
         # Simulación de estados reales y mediciones ruidosas
         for t in range(steps):
-            true_states[t, 0] = theta_0 + np.sin(t * 0.1)
-            noisy_measurements[t] = true_states[t, 0] + np.random.normal(0, self.noise_std)
+            true_state = [np.sin(t * 0.1), 0.1 * np.cos(t * 0.1)]
+            measurement = true_state[0] + np.random.normal(0, 0.1)
 
-            # Predicción y corrección con el filtro de Kalman
+            # Filtro de Kalman
             self.predict(u[t])
-            self.update(np.array([[noisy_measurements[t]]]))
-            kalman_estimates[t] = self.get_state().flatten()
+            self.update(np.array([[measurement]]))
 
-        return time, true_states, noisy_measurements, kalman_estimates
+            true_states.append(true_state)
+            kalman_estimates.append(self.get_state().flatten())
+            noisy_measurements.append(measurement)
 
-    def simulate_kalman_with_pid(A, B, C, Q, R, P_init, x_init, time, true_angle, noisy_measurements, u_pid):
+        return np.array(time), np.array(true_states), np.array(noisy_measurements), np.array(kalman_estimates)
+
+    def simulate_kalman_with_pid(A, B, C, Q, R, P_init, x_init, time, noisy_measurements, u_pid):
         kalman_filter = KalmanFilter(A, B, C, Q, R, P_init, x_init)
         estimates = []
 

@@ -3,7 +3,6 @@ from system.animation import PendulumAnimation
 from optimization.Optimization import PIDOptimizer
 import design_implementation.PID
 import tkinter as tk
-from tkinter import ttk
 
 # Parámetros del sistema
 car_mass = 1.0
@@ -26,13 +25,15 @@ transfer_function_position = {
 pendulum_1 = InvertedPendulum(transfer_function_angle)
 pendulum_2 = InvertedPendulum(transfer_function_position)
 
-y_label_function_angle = "Ángulo θ (rad)"
+y_label_function_angle = "Posición x (m)"
 
 print('Simulación con la función de transferencia que involucra la posición del carrito:')
 time_2_open, response_2_open = pendulum_2.get_step_response()
 animation_2_open = PendulumAnimation(time_2_open, response_2_open, rod_length)
 animation_2_open.create_animation()
 pendulum_2.plot_response(time_2_open, response_2_open, y_label_function_angle, "Respuesta sin PID (Sistema 2)")
+
+y_label_function_angle = "Ángulo θ (rad)"
 
 print('Simulación con la función de transferencia que involucra el ángulo:')
 # Sin PID
@@ -44,7 +45,7 @@ pendulum_1.plot_response(time_1_open, response_1_open, y_label_function_angle, "
 
 # Con PID
 print("Con PID:")
-K_p, K_i, K_d = 1e-15, 0.4e-17, 1.5e-15
+K_p, K_i, K_d = 1e-12, 0.4e-14, 1.5e-12
 root = tk.Tk()
 app = design_implementation.PID.PendulumApp(root)
 root.mainloop()

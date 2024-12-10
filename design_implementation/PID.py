@@ -46,10 +46,10 @@ class PendulumApp:
         self.M_slider = self.create_slider("M (Masa del Carrito)", 0.1, 5.0, self.M)
         self.m_slider = self.create_slider("m (Masa del Péndulo)", 0.01, 2.0, self.m)
         self.l_slider = self.create_slider("l (Longitud del Péndulo)", 0.1, 2.0, self.l)
-        # Crear sliders para Kp, Ki y Kd
-        self.Kp_slider = self.create_slider("Kp", 0, 100, 20)
-        self.Ki_slider = self.create_slider("Ki", 0, 10, 0.7)
-        self.Kd_slider = self.create_slider("Kd", 0, 20, 5)
+        # Crear sliders para Kp, Ki y Kd: 1e-15, 0.4e-17, 1.5e-15
+        self.Kp_slider = self.create_slider("Kp", 0, 100, 1e-12)
+        self.Ki_slider = self.create_slider("Ki", 0, 10, 0.4e-14)
+        self.Kd_slider = self.create_slider("Kd", 0, 20, 1.5e-12)
         # Botón para actualizar las gráficas
         self.update_button = ttk.Button(self.slider_frame, text="Actualizar Gráficas", command=self.update_plots)
         self.update_button.pack(pady=10)
@@ -72,36 +72,39 @@ class PendulumApp:
         label.pack(side='left')
         return slider
     def update_plots(self):
-        # Obtener valores de los sliders
-        M = self.M_slider.get()
-        m = self.m_slider.get()
-        l = self.l_slider.get()
-        Kp = self.Kp_slider.get()
-        Ki = self.Ki_slider.get()
-        Kd = self.Kd_slider.get()
-        # Actualizar el sistema del péndulo con los nuevos parámetros
-        self.pendulum_system = PendulumSystem(M, m, l)
-        # Limpiar las gráficas
-        for ax in self.axs.flatten():
-            ax.clear()
-        # Simulaciones para cada tipo de controlador
-        controllers = {
-            'P': (Kp, 0, 0),
-            'PI': (Kp, Ki, 0),
-            'PD': (Kp, 0, Kd),
-            'PID': (Kp, Ki, Kd)
-        }
-        for i, (ctrl_type, gains) in enumerate(controllers.items()):
-            Kp, Ki, Kd = gains
-            time, response = self.pendulum_system.simulate(Kp, Ki, Kd, theta_0=self.theta_0)
-            ax = self.axs[i // 2, i % 2]
-            ax.plot(time, response, label=ctrl_type)
-            ax.set_title(f'Respuesta del Controlador {ctrl_type}')
-            ax.set_xlabel('Tiempo (s)')
-            ax.set_ylabel('Ángulo θ (rad)')
-            ax.grid()
-            ax.legend()
-        self.canvas.draw()
+        try:
+            # Obtener valores de los sliders
+            M = self.M_slider.get()
+            m = self.m_slider.get()
+            l = self.l_slider.get()
+            Kp = self.Kp_slider.get()
+            Ki = self.Ki_slider.get()
+            Kd = self.Kd_slider.get()
+            # Actualizar el sistema del péndulo con los nuevos parámetros
+            self.pendulum_system = PendulumSystem(M, m, l)
+            # Limpiar las gráficas
+            for ax in self.axs.flatten():
+                ax.clear()
+            # Simulaciones para cada tipo de controlador
+            controllers = {
+                'P': (Kp, 0, 0),
+                'PI': (Kp, Ki, 0),
+                'PD': (Kp, 0, Kd),
+                'PID': (Kp, Ki, Kd)
+            }
+            for i, (ctrl_type, gains) in enumerate(controllers.items()):
+                Kp, Ki, Kd = gains
+                time, response = self.pendulum_system.simulate(Kp, Ki, Kd, theta_0=self.theta_0)
+                ax = self.axs[i // 2, i % 2]
+                ax.plot(time, response, label=ctrl_type)
+                ax.set_title(f'Respuesta del Controlador {ctrl_type}')
+                ax.set_xlabel('Tiempo (s)')
+                ax.set_ylabel('Ángulo θ (rad)')
+                ax.grid()
+                ax.legend()
+            self.canvas.draw()
+        except AttributeError as e:
+            print(f"-")
         
 if __name__ == "__main__":
     root = tk.Tk()

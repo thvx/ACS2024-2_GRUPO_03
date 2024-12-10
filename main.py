@@ -45,7 +45,7 @@ pendulum_1.plot_response(time_1_open, response_1_open, y_label_function_angle, "
 
 # Con PID
 print("Con PID:")
-K_p, K_i, K_d = 1e-15, 0.4e-17, 1.5e-15
+K_p, K_i, K_d = 1e-12, 0.4e-14, 1.5e-12
 root = tk.Tk()
 app = design_implementation.PID.PendulumApp(root)
 root.mainloop()

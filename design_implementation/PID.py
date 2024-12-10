@@ -46,10 +46,10 @@ class PendulumApp:
         self.M_slider = self.create_slider("M (Masa del Carrito)", 0.1, 5.0, self.M)
         self.m_slider = self.create_slider("m (Masa del Péndulo)", 0.01, 2.0, self.m)
         self.l_slider = self.create_slider("l (Longitud del Péndulo)", 0.1, 2.0, self.l)
-        # Crear sliders para Kp, Ki y Kd
-        self.Kp_slider = self.create_slider("Kp", 0, 100, 20)
-        self.Ki_slider = self.create_slider("Ki", 0, 10, 0.7)
-        self.Kd_slider = self.create_slider("Kd", 0, 20, 5)
+        # Crear sliders para Kp, Ki y Kd: 1e-15, 0.4e-17, 1.5e-15
+        self.Kp_slider = self.create_slider("Kp", 0, 100, 1e-12)
+        self.Ki_slider = self.create_slider("Ki", 0, 10, 0.4e-14)
+        self.Kd_slider = self.create_slider("Kd", 0, 20, 1.5e-12)
         # Botón para actualizar las gráficas
         self.update_button = ttk.Button(self.slider_frame, text="Actualizar Gráficas", command=self.update_plots)
         self.update_button.pack(pady=10)

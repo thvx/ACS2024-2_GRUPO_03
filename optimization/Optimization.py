@@ -10,7 +10,7 @@ class PIDOptimizer:
 
     # Obtendremos el error mediante este método
     def objective_function(self, params):
-        K_p, K_i, K_d = params
+        K_p, K_i, K_d = params # Obtenemos Kp,Ki y Kd en función de los parámetros que se pasan
         C = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0])
         T = ctrl.feedback(self.tf * C)
 

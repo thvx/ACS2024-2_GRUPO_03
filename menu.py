@@ -44,7 +44,7 @@ def run_pid_simulacion():
         'denominator': [1.0 * 0.5, 0, -(1.0 + 0.2) * 9.81]
     }
     pendulum = InvertedPendulum(transfer_function_angle)
-    time, response = pendulum.simulate_with_pid(1e-12, 0.4e-14, 1.5e-12)
+    time, response = pendulum.simulate_with_pid(1e-10, 0.4e-12, 1.5e-10)
     cart_motion = 0.1 * time  # El carrito se mueve hacia la derecha linealmente
 
     # Crear animación

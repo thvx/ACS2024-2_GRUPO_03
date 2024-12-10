@@ -8,7 +8,7 @@ class PIDOptimizer:
         self.denominator = transfer_function_dict['denominator']
         self.tf = ctrl.TransferFunction(self.numerator, self.denominator)
 
-    # Obtener error
+    # Obtendremos el error mediante este método
     def objective_function(self, params):
         K_p, K_i, K_d = params
         C = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0])

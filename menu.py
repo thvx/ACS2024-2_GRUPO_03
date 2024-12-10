@@ -9,8 +9,26 @@ import numpy as np
 import tkinter as tk
 
 
-def run_pid_unoptimized():
-    """Ejecuta la simulación del PID sin optimizar."""
+
+# Simulación con la función de transferencia que involucra la posición del carrito
+def run_system_function_position():
+    car_mass = 1.0
+    pendulum_mass = 0.2
+    rod_length = 0.5
+    gravity = 9.81
+    # Configuración del sistema
+    transfer_function_position = {
+        'numerator': [rod_length, 0, -gravity],
+        'denominator': [rod_length * car_mass, 0, -(car_mass + pendulum_mass) * gravity, 0, 0]
+    }
+    pendulum = InvertedPendulum(transfer_function_position)
+    time, response = pendulum.get_step_response()
+    animation = PendulumAnimation(time, response, rod_length=0.5)
+    animation.create_animation()
+    pendulum.plot_response(time, response, "Posición X (m)", "Respuesta sin PID (posición)")
+
+# Simulación con la función de transferencia que involucra el ángulo
+def run_system_function_angle():
     # Configuración del sistema
     transfer_function_angle = {
         'numerator': [-1],
@@ -20,7 +38,7 @@ def run_pid_unoptimized():
     time, response = pendulum.get_step_response()
     animation = PendulumAnimation(time, response, rod_length=0.5)
     animation.create_animation()
-    pendulum.plot_response(time, response, "Ángulo θ (rad)", "PID Sin Optimizar")
+    pendulum.plot_response(time, response, "Ángulo θ (rad)", "Respuesta sin PID (ángulo)")
 
 def run_pid_simulacion():
     root = tk.Tk()
@@ -38,7 +56,8 @@ def run_pid_optimized():
     optimizer = PIDOptimizer(transfer_function_angle)
     K_p, K_i, K_d = optimizer.optimize_pid()
     time, response = pendulum.simulate_with_pid(K_p, K_i, K_d)
-    animation = PendulumAnimation(time, response, rod_length=0.5)
+    cart_motion = 0.1 * time  # El carrito se mueve hacia la derecha linealmente
+    animation = PendulumAnimation(time, response, rod_length=0.5, cart_motion=cart_motion)
     animation.create_animation()
     pendulum.plot_response(time, response, "Ángulo θ (rad)", "PID Optimizado")
 
@@ -97,9 +116,13 @@ label = tk.Label(root, text="Seleccione una opción:", font=("Arial", 14))
 label.pack(pady=10)
 
 # Botones de opciones
-btn_pid_unoptimized = tk.Button(root, text="PID Sin Optimizar", font=("Arial", 12),
-                                 command=run_pid_unoptimized)
-btn_pid_unoptimized.pack(pady=5)
+btn_withoud_pid_position = tk.Button(root, text="Sistema sin PID (posición)", font=("Arial", 12),
+                                 command=run_system_function_position)
+btn_withoud_pid_position.pack(pady=5)
+
+btn_withoud_pid_angle = tk.Button(root, text="Sistema sin PID (ángulo)", font=("Arial", 12),
+                                 command=run_system_function_angle)
+btn_withoud_pid_angle.pack(pady=5)
 
 btn_pid_unoptimized = tk.Button(root, text="Simulacion PID", font=("Arial", 12),
                                  command=run_pid_simulacion)

@@ -72,36 +72,39 @@ class PendulumApp:
         label.pack(side='left')
         return slider
     def update_plots(self):
-        # Obtener valores de los sliders
-        M = self.M_slider.get()
-        m = self.m_slider.get()
-        l = self.l_slider.get()
-        Kp = self.Kp_slider.get()
-        Ki = self.Ki_slider.get()
-        Kd = self.Kd_slider.get()
-        # Actualizar el sistema del péndulo con los nuevos parámetros
-        self.pendulum_system = PendulumSystem(M, m, l)
-        # Limpiar las gráficas
-        for ax in self.axs.flatten():
-            ax.clear()
-        # Simulaciones para cada tipo de controlador
-        controllers = {
-            'P': (Kp, 0, 0),
-            'PI': (Kp, Ki, 0),
-            'PD': (Kp, 0, Kd),
-            'PID': (Kp, Ki, Kd)
-        }
-        for i, (ctrl_type, gains) in enumerate(controllers.items()):
-            Kp, Ki, Kd = gains
-            time, response = self.pendulum_system.simulate(Kp, Ki, Kd, theta_0=self.theta_0)
-            ax = self.axs[i // 2, i % 2]
-            ax.plot(time, response, label=ctrl_type)
-            ax.set_title(f'Respuesta del Controlador {ctrl_type}')
-            ax.set_xlabel('Tiempo (s)')
-            ax.set_ylabel('Ángulo θ (rad)')
-            ax.grid()
-            ax.legend()
-        self.canvas.draw()
+        try:
+            # Obtener valores de los sliders
+            M = self.M_slider.get()
+            m = self.m_slider.get()
+            l = self.l_slider.get()
+            Kp = self.Kp_slider.get()
+            Ki = self.Ki_slider.get()
+            Kd = self.Kd_slider.get()
+            # Actualizar el sistema del péndulo con los nuevos parámetros
+            self.pendulum_system = PendulumSystem(M, m, l)
+            # Limpiar las gráficas
+            for ax in self.axs.flatten():
+                ax.clear()
+            # Simulaciones para cada tipo de controlador
+            controllers = {
+                'P': (Kp, 0, 0),
+                'PI': (Kp, Ki, 0),
+                'PD': (Kp, 0, Kd),
+                'PID': (Kp, Ki, Kd)
+            }
+            for i, (ctrl_type, gains) in enumerate(controllers.items()):
+                Kp, Ki, Kd = gains
+                time, response = self.pendulum_system.simulate(Kp, Ki, Kd, theta_0=self.theta_0)
+                ax = self.axs[i // 2, i % 2]
+                ax.plot(time, response, label=ctrl_type)
+                ax.set_title(f'Respuesta del Controlador {ctrl_type}')
+                ax.set_xlabel('Tiempo (s)')
+                ax.set_ylabel('Ángulo θ (rad)')
+                ax.grid()
+                ax.legend()
+            self.canvas.draw()
+        except AttributeError as e:
+            print(f"-")
         
 if __name__ == "__main__":
     root = tk.Tk()

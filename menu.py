@@ -8,8 +8,6 @@ import design_implementation.PID
 import numpy as np
 import tkinter as tk
 
-
-
 # Simulación con la función de transferencia que involucra la posición del carrito
 def run_system_function_position():
     car_mass = 1.0
@@ -41,6 +39,17 @@ def run_system_function_angle():
     pendulum.plot_response(time, response, "Ángulo θ (rad)", "Respuesta sin PID (ángulo)")
 
 def run_pid_simulacion():
+    transfer_function_angle = {
+        'numerator': [-1],
+        'denominator': [1.0 * 0.5, 0, -(1.0 + 0.2) * 9.81]
+    }
+    pendulum = InvertedPendulum(transfer_function_angle)
+    time, response = pendulum.simulate_with_pid(1e-15, 0.4e-17, 1.5e-15)
+    cart_motion = 0.1 * time  # El carrito se mueve hacia la derecha linealmente
+
+    # Crear animación
+    animation = PendulumAnimation(time, response, rod_length=1.0, cart_motion=cart_motion)
+    animation.create_animation()
     root = tk.Tk()
     app = design_implementation.PID.PendulumApp(root)
     root.mainloop()

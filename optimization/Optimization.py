@@ -8,6 +8,7 @@ class PIDOptimizer:
         self.denominator = transfer_function_dict['denominator']
         self.tf = ctrl.TransferFunction(self.numerator, self.denominator)
 
+    # Obtener error
     def objective_function(self, params):
         K_p, K_i, K_d = params
         C = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0])
@@ -19,7 +20,7 @@ class PIDOptimizer:
         time = np.linspace(0, t_end, steps)
         _, response = ctrl.step_response(T, T=time)
 
-        # Queremos que el ángulo θ se mantenga en 0
+        # Obtener el error
         error = np.mean(np.square(response))
         return error
 
@@ -30,12 +31,14 @@ class PIDOptimizer:
         result = differential_evolution(self.objective_function, bounds)
         optimized_params = result.x
 
+        # Mostrar parámetros optimizados
         print(f"Parámetros optimizados PID:")
         print(f"Kp: {optimized_params[0]}, Ki: {optimized_params[1]}, Kd: {optimized_params[2]}")
 
         return optimized_params
 
     def simulate_with_optimized_pid(self, K_p, K_i, K_d):
+        # Simular la respuesta con parámetors optimizados
         C = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0])
         T = ctrl.feedback(self.tf * C)
 

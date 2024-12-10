@@ -8,18 +8,19 @@ class PIDOptimizer:
         self.denominator = transfer_function_dict['denominator']
         self.tf = ctrl.TransferFunction(self.numerator, self.denominator)
 
+    # Obtendremos el error mediante este método
     def objective_function(self, params):
-        K_p, K_i, K_d = params
-        C = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0])
+        K_p, K_i, K_d = params # Obtenemos Kp,Ki y Kd en función de los parámetros que se pasan
+        C = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0]) # Aplicamos función de transferencia
         T = ctrl.feedback(self.tf * C)
 
         # Simular el sistema durante 5 segundos
         t_end = 5
         steps = 500
         time = np.linspace(0, t_end, steps)
-        _, response = ctrl.step_response(T, T=time)
+        _, response = ctrl.step_response(T, T=time) # Obtenemos el comportamiento del sistema
 
-        # Queremos que el ángulo θ se mantenga en 0
+        # Obtener el error
         error = np.mean(np.square(response))
         return error
 
@@ -27,15 +28,18 @@ class PIDOptimizer:
         # Rango de valores para K_p, K_i y K_d
         bounds = [(0.0, 10.0), (0.0, 5.0), (0.0, 5.0)]
 
+        # Aplicamos la evolucion diferencial que necesita el error (error cuadrático medio) y los límites de los valores Ki, Kp y Kd
         result = differential_evolution(self.objective_function, bounds)
         optimized_params = result.x
 
+        # Mostrar parámetros optimizados
         print(f"Parámetros optimizados PID:")
         print(f"Kp: {optimized_params[0]}, Ki: {optimized_params[1]}, Kd: {optimized_params[2]}")
 
         return optimized_params
 
     def simulate_with_optimized_pid(self, K_p, K_i, K_d):
+        # Simular la respuesta con parámetors optimizados
         C = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0])
         T = ctrl.feedback(self.tf * C)
 

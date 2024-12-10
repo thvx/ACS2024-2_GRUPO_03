@@ -3,6 +3,7 @@ import numpy as np
 
 
 class PendulumAnimation:
+    # Inicialización de la clase PendulumAnimation
     def __init__(self, time_steps, response, rod_length, kalman_estimates=None, cart_motion=None):
         self.time_steps = time_steps    # Array de tiempos
         self.response = response        # Array de respuestas

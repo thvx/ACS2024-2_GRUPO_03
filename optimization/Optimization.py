@@ -11,14 +11,14 @@ class PIDOptimizer:
     # Obtendremos el error mediante este método
     def objective_function(self, params):
         K_p, K_i, K_d = params # Obtenemos Kp,Ki y Kd en función de los parámetros que se pasan
-        C = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0])
+        C = ctrl.TransferFunction([K_d, K_p, K_i], [1, 0]) # Aplicamos función de transferencia
         T = ctrl.feedback(self.tf * C)
 
         # Simular el sistema durante 5 segundos
         t_end = 5
         steps = 500
         time = np.linspace(0, t_end, steps)
-        _, response = ctrl.step_response(T, T=time)
+        _, response = ctrl.step_response(T, T=time) # Obtenemos el comportamiento del sistema
 
         # Obtener el error
         error = np.mean(np.square(response))
@@ -28,6 +28,7 @@ class PIDOptimizer:
         # Rango de valores para K_p, K_i y K_d
         bounds = [(0.0, 10.0), (0.0, 5.0), (0.0, 5.0)]
 
+        # Aplicamos la evolucion diferencial que necesita el error (error cuadrático medio) y los límites de los valores Ki, Kp y Kd
         result = differential_evolution(self.objective_function, bounds)
         optimized_params = result.x
 
